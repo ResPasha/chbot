@@ -8,9 +8,9 @@ from db_helper import DBHelper
 import config
 import strings
 
+
 class CHBot:
     def __init__(self):
-        self.bot = None
         self.bot = telepot.Bot(config.TOKEN)
         self.bot.notifyOnMessage({'normal': self.on_normal_message})
 
