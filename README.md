@@ -14,6 +14,8 @@ db_name = '<database_name>'
 You can use userid instead of any `@channel_name` for publishing to specified user instead of channel.
 It is useful for testing.
 
+MongoDB should already have tho collections. Their names aer specified in `db_helper.cr_coll_name` and `db_helper.img_coll_name`.
+
 ## Usage
 ```
 ./chbot.py &
