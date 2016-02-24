@@ -9,7 +9,7 @@ res_tag_1920 = '#1920p'
 res_tag_wide = '#wide'
 res_tag_vert = '#verticalhd'
 
-id_field = 'id'
+id_field = '_id'
 
 cr_coll_name = 'cr_tags'
 cr_orig_field = 'original'
@@ -118,6 +118,8 @@ class DBHelper:
 
     def find_by_link(self, hires_link):
         db_rec = self.img_coll.find_one({img_hires_field: hires_link})
+        if not db_rec:
+            return None
         image = Image(db_rec[img_hires_field], db_rec[img_cr_field])
         image.file_id = db_rec[img_fileid_field]
         image.res = db_rec[img_res_field]

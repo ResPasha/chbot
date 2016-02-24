@@ -11,7 +11,7 @@ class Image:
         self.res = None
         self.file_id = None
         self.db_id = None
-        self.extra_tags = None
+        self.extra_tags = []
 
 
 def iqdb_tag_match(tag):
