@@ -3,5 +3,4 @@ requests
 beautifulsoup4
 pymongo
 html5lib
-gdshortener
 bson
