@@ -23,12 +23,24 @@ cancel_publish_confirm = 'As you wish, Master!'
 
 term_cmd = '/terminate'
 help_cmd = '/help'
-not_posted_list_cmd = '/not_posted'
+not_posted_list_cmd = '/images'
 users_cmd = '/users'
 
-maid_footer = '\n\nFrom Maid-chan ^_^'
+usr_hlpr_cmd = '/helper'
+usr_common_cmd = '/user'
+
+start_cmd = '/start'
+ping_cmd = '/ping'
+stop_cmd = '/stop'
+
+maid_footer = '\nFrom Maid-chan ^_^'
 welcoming = 'Hi there!\n' + \
             'I am Maid-chan - an automatic AI message-reply bot created by @Phash.\n\n' + \
             'Write me about your problem and I will contact you with my Master.' + maid_footer
 ping_thankie = 'I am ok, thank you!' + maid_footer
 suggestion_thankie = 'Thank you for suggestion! Master will be happy to see it.' + maid_footer
+
+helper_sorry = 'Not found, I am sorry... I can\'t help you with it.' + maid_footer
+helper_found = 'Found, sent on Master review!' + maid_footer
+
+feedback_confirmation = 'Sent, Master!'

@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from hires_finder import Image
+from models import *
 import config
 
 res_tag_720 = '#720p'
@@ -22,6 +22,14 @@ img_res_field = 'res'
 img_fileid_field = 'photo'
 img_extras_field = 'extra_tags'
 
+usr_coll_name = 'users'
+usr_id_field = 'uid'
+usr_fname_field = 'first_name'
+usr_lname_field = 'last_name'
+usr_uname_field = 'username'
+usr_type_field = 'utype'
+usr_lastmsg_field = 'last_msg'
+
 nsfw_postfix = '_nsfw'
 
 
@@ -29,8 +37,18 @@ class DBHelper:
     def __init__(self):
         db_client = MongoClient(config.db_auth)
         db = db_client[config.db_name]
+
+        if cr_coll_name not in db.collection_names():
+            db.create_collection(cr_coll_name)
         self.cr_coll = db[cr_coll_name]
+
+        if img_coll_name not in db.collection_names():
+            db.create_collection(img_coll_name)
         self.img_coll = db[img_coll_name]
+
+        if usr_coll_name not in db.collection_names():
+            db.collection_names(usr_coll_name)
+        self.usr_coll = db[usr_coll_name]
 
     @staticmethod
     def get_res_tags(res):
@@ -62,7 +80,8 @@ class DBHelper:
         image = Image(db_doc[img_hires_field], db_doc[img_cr_field])
         image.copyright_tag = self.get_cr_htag(image.copyright_tag)
         image.res = db_doc[img_res_field]
-        image.extra_tags = db_doc[img_extras_field]
+        if db_doc[img_extras_field]:
+            image.extra_tags = db_doc[img_extras_field]
         image.db_id = db_id
         image.file_id = db_doc[img_fileid_field]
         return image
@@ -123,9 +142,67 @@ class DBHelper:
         image = Image(db_rec[img_hires_field], db_rec[img_cr_field])
         image.file_id = db_rec[img_fileid_field]
         image.res = db_rec[img_res_field]
-        image.extra_tags = db_rec[img_extras_field]
+        if db_rec[img_extras_field]:
+            image.extra_tags = db_rec[img_extras_field]
         image.db_id = db_rec[id_field]
         return image
 
     def delete(self, image):
         self.img_coll.delete_one({id_field: ObjectId(image.db_id)})
+
+    def add_usr(self, user):
+        db_rec = self.usr_coll.find_one({usr_id_field: user.id})
+        if db_rec:
+            user.type = db_rec[usr_type_field]
+            self.usr_coll.update_one(
+                {usr_id_field: user.id},
+                {'$set': {
+                    usr_fname_field: user.fname,
+                    usr_lname_field: user.lname,
+                    usr_uname_field: user.uname,
+                    usr_lastmsg_field: user.last_msg
+                }}
+            )
+        else:
+            user.type = 'user'
+            self.usr_coll.insert_one({
+                usr_id_field: user.id,
+                usr_fname_field: user.fname,
+                usr_lname_field: user.lname,
+                usr_uname_field: user.uname,
+                usr_lastmsg_field: user.last_msg,
+                usr_type_field: 'user'
+            })
+
+    def update_usr_type(self, user):
+        self.usr_coll.update_one(
+            {usr_id_field: user.id},
+            {'$set': {
+                usr_type_field: user.type
+            }}
+        )
+
+    def del_usr(self, user):
+        self.usr_coll.delete_one({usr_id_field: user.id})
+
+    def get_images(self):
+        for db_doc in self.img_coll.find({}):
+            image = Image(db_doc[img_hires_field], db_doc[img_cr_field])
+            image.copyright_tag = self.get_cr_htag(image.copyright_tag)
+            image.res = db_doc[img_res_field]
+            if db_doc[img_extras_field]:
+                image.extra_tags = db_doc[img_extras_field]
+            image.db_id = db_doc[id_field]
+            image.file_id = db_doc[img_fileid_field]
+            yield image
+
+    def get_users(self):
+        for doc in self.usr_coll.find({}):
+            user = User()
+            user.id = doc[usr_id_field]
+            user.fname = doc[usr_fname_field]
+            user.lname = doc[usr_lname_field]
+            user.uname = doc[usr_uname_field]
+            user.type = doc[usr_type_field]
+            user.last_msg = doc[usr_lastmsg_field]
+            yield user

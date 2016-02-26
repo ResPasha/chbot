@@ -3,16 +3,7 @@ from re import split as re_split
 import requests
 import urlshortener
 
-
-class Image:
-    def __init__(self, hires_link, copyright_tag):
-        self.hires_link = hires_link
-        self.copyright_tag = copyright_tag
-        self.res = None
-        self.file_id = None
-        self.db_id = None
-        self.extra_tags = []
-
+from models import Image
 
 def iqdb_tag_match(tag):
     if tag.name == 'td':
@@ -25,46 +16,55 @@ def iqdb_tag_match(tag):
 
 
 def get_from_danbooru(link):
-    danbooru = None
-    while True:  # strange cycle coz danbooru likes to fail
-        danbooru = requests.request('GET', link)
-        if danbooru.status_code == 200:
-            break
-    danbooru_soup = BeautifulSoup(danbooru.content, 'html5lib')
-    copyright_tag = danbooru_soup.find('li', {'class': 'category-3'}).contents[2].string
-    copyright_tag = '#' + copyright_tag.replace(' ', '_')
-    hires_link = 'http://danbooru.donmai.us'
     try:
-        hires_link += danbooru_soup.find(id='image-resize-link')['href']
-    except TypeError:
-        hires_link += danbooru_soup.find(id='image')['src']
-    return Image(hires_link, copyright_tag)
+        danbooru = None
+        while True:  # strange cycle coz danbooru likes to fail
+            danbooru = requests.request('GET', link)
+            if danbooru.status_code == 200:
+                break
+        danbooru_soup = BeautifulSoup(danbooru.content, 'html5lib')
+        copyright_tag = danbooru_soup.find('li', {'class': 'category-3'}).contents[2].string
+        copyright_tag = '#' + copyright_tag.replace(' ', '_')
+        hires_link = 'http://danbooru.donmai.us'
+        try:
+            hires_link += danbooru_soup.find(id='image-resize-link')['href']
+        except TypeError:
+            hires_link += danbooru_soup.find(id='image')['src']
+        return Image(hires_link, copyright_tag)
+    except Exception:
+        return None
 
 
 def get_from_zerochan(link):
-    zerochan = requests.request('GET', link)
-    zerochan_soup = BeautifulSoup(zerochan.content, 'html5lib')
-    hires_link = zerochan_soup.find('div', {'id': 'large'}).a['href']  # FIXME
-    if hires_link:
-        copyright_tag = zerochan_soup.find('h1').contents[2].string
-        copyright_tag = '#' + copyright_tag.replace(' ', '_')
-    else:
+    try:
+        zerochan = requests.request('GET', link)
+        zerochan_soup = BeautifulSoup(zerochan.content, 'html5lib')
+        hires_link = zerochan_soup.find('div', {'id': 'large'}).a['href']  # FIXME
+        if hires_link:
+            copyright_tag = zerochan_soup.find('h1').contents[2].string
+            copyright_tag = '#' + copyright_tag.replace(' ', '_')
+        else:
+            return None
+        return Image(hires_link, copyright_tag)
+    except Exception:
         return None
-    return Image(hires_link, copyright_tag)
 
 
 def process_tag(tag):
-    if not len(tag.contents) == 5:
-        return None
-    similarity = int(tag.contents[4].td.string[:2])
-    if similarity < 90:
-        return None
-    link = tag.a['href']
-    if not link.startswith('http'):
-        link = 'http:' + link
-    source = tag.contents[2].td.contents[1]
-    resolution_str = tag.contents[3].td.string.split(' ', 1)[0]
-    res = re_split(r'[^\d]+', resolution_str)
+    try:
+        if not len(tag.contents) == 5:
+            return None
+        similarity = int(tag.contents[4].td.string[:2])
+        if similarity < 90:
+            return None
+        link = tag.a['href']
+        if not link.startswith('http'):
+            link = 'http:' + link
+        source = tag.contents[2].td.contents[1]
+        resolution_str = tag.contents[3].td.string.split(' ', 1)[0]
+        res = re_split(r'[^\d]+', resolution_str)
+    except Exception:
+        pass
 
     image = None
     if source == 'Danbooru ':
@@ -90,8 +90,9 @@ def get_hires(file):
         if image:
             break
 
-    assert image, 'hires not found'
-    image.hires_link = s.shorten(image.hires_link)
+    if image:
+        image.hires_link = s.shorten(image.hires_link)
+    # TODO publish to imgur instead of shortening (above)
     return image
 
 s = urlshortener.Shortener()
