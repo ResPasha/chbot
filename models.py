@@ -1,32 +1,26 @@
-class Image:
-    res = None
-    file_id = None
-    db_id = None
-    extra_tags = []
+import telepot.namedtuple
 
-    def __init__(self, hires_link, copyright_tag):
-        # TODO update constructor for better integration with db
-        self.hires_link = hires_link
-        self.copyright_tag = copyright_tag
+class ModelObj():
+    def __init__(self, d):
+        self.__dict__.update(d)
+
+    def __str__(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 
-class User:
-    id = None
-    fname = None
-    lname = None
-    uname = None
-    type = None
-    last_msg = None
+class User(ModelObj, telepot.namedtuple.User):
+    def __init__(self, **kwargs):
+        d = {}
+        d.update(kwargs)
+        if 'id' in d:
+            del d['id']
+            d['_id'] = kwargs['id']
+        super().__init__(d)
 
-    def __init__(self, user=None, msg=None):
-        if user or msg:
-            if not user:
-                user = msg['from']
-            self.id = user['id']
-            self.fname = user['first_name']
-            if 'last_name' in user:
-                self.lname = user['last_name']
-            if 'username' in user:
-                self.uname = user['username']
-            if msg:
-                self.last_msg = msg['message_id']
+    def __str__(self):
+        s = self.first_name + ' @' + self.username
+        s += '\n/user' + str(self._id)
+        return s
