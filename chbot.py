@@ -2,7 +2,7 @@
 import traceback
 
 from db_helper import DBHelper
-from controls import Pager
+from controls import *
 from models import User
 from bot import Bot
 import config
@@ -31,6 +31,7 @@ class CHBot:
     def handle_master_reply(self, msg):
         assert 'text' in msg, 'master_reply first fuckup: no text'
         text = msg['text']
+        # commands
         assert 'reply_to_message' in msg, 'master_reply second fuckup: no replied'
         replied = msg['reply_to_message']
         if 'forward_from' in replied:
@@ -42,18 +43,26 @@ class CHBot:
 
         # Master commands
         if text == strings.cmd_start:
-            m = Menu()
+            # TODO: check for existence
+            m = Menu('main', {
+                'Intro': 'Hello there!',
+                'Help': 'Little help',
+                'Info': 'Source code, author and contact info'
+            })
             self.controls[m.name] = m
+            m.send(msg['from']['id'])
             return
         if text == strings.cmd_users:
+            # TODO: check for existence
             p = Pager('u', self.db.get(self.db.usr, User))
             p.title = strings.msg_users
             self.controls[p.name] = p
             p.send(msg['from']['id'])
             return
         elif text.startswith(strings.cmd_user):
+            # TODO: check for existence
             user_id = int(text.split('r')[1])
-            h = History('h', user_id)
+            h = History('h', user_id)  # FIXME
             self.controls[h.name] = h
             return
 

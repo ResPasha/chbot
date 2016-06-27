@@ -10,3 +10,5 @@ msg_users = 'Users list'
 
 errmsg_unknown_cmd = 'Unknown command.'
 errmsg_err = 'An error occurred:'
+
+ca_done = 'Done!'

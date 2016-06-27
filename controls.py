@@ -1,7 +1,9 @@
 from collections import namedtuple
+import traceback
 
 from telepot.namedtuple import *
 from telepot.exception import TelegramError
+
 from bot import Bot
 import strings
 
@@ -17,9 +19,9 @@ UPDATE_REPLY_MARKUP = 2
 
 
 class Control:
-    def __init__(self, type, name):
+    def __init__(self, control_type, name):
         self.bot = Bot(None)
-        self.type = type
+        self.type = control_type
         self.name = self.type + name
 
     def process(self, _query):
@@ -55,10 +57,7 @@ class Control:
                     reply_markup=self.get_inline_kb(data)
                 )
         except TelegramError:
-            pass
-        except Exception:
-            answer_text = "An error occured"
-            show_alert = True
+            traceback.print_exc()
 
         if answer_text:
             self.bot.answerCallbackQuery(query.id, answer_text, show_alert)
@@ -75,7 +74,7 @@ class Control:
         if kb:
             for row in kb:
                 for button in row:
-                    button.callback_data = self.name + '#' + button.callback_data
+                    button.callback_data = self.name + '#' + button.callback_data  # FIXME tuple is immutable
             return InlineKeyboardMarkup(inline_keyboard=kb)
         return None
 
@@ -93,9 +92,12 @@ class Control:
 
 
 class Pager(Control):
-    def __init__(self, name, list):
+    def _get_caption(self, *args):
+        pass
+
+    def __init__(self, name, source_list):
         super().__init__("p", name)
-        self.list = list
+        self.list = source_list
         self.items_per_page = 3
         self.title = ""
         self.default_page_no = 1
@@ -125,7 +127,6 @@ class Pager(Control):
                 text = '*' + str(i) + '*'
             else:
                 text = '.' + str(i) + '.'
-            query = page_no
             button_row.append(InlineKeyboardButton(text=text, callback_data=str(i)))
         return [button_row]
 
@@ -134,35 +135,44 @@ class Pager(Control):
             return ProcessResult(strings.ca_done, False, UPDATE_TEXT)
 
 
-class History(Pager):
-    def __init__(self, user_id):
-        self.user = db.get_user(user_id)
-        super().__init__("u" + str(user_id), self.user.get_log())
-        self.items_per_page = 5
-        self.title = str(self.user)
-        self.notification = self.user.notify
+class Menu(Control):
+    Item = namedtuple('Item',
+                      [
+                          'command',
+                          'cb_text',
+                          'out_text'
+                      ])
+
+    def __init__(self, name, menu_dict):
+        super().__init__("m", name)
+        i = 1
+        self.items = []
+        for key in menu_dict.keys():
+            self.items.append(Menu.Item(str(i), key, menu_dict[key]))
+            i += 1
+        self.title = ''
+
+    def _get_caption(self, *args):
+        pass
 
     def _get_inline_kb(self, data=None):
-        kb = []
-        kb.append(InlineKeyboardButton(text=strings.cb_block, callback_data='b'))
-        kb.append(InlineKeyboardButton(text=strings.cb_notify, callback_data='n'))
-        pages = super().get_inline_kb(data)
-        pages.extend(kb)
-        return pages
+        button_row = []
+        for item in self.items:
+            text = item.cb_text
+            if data == item.command:
+                text = '* ' + text
+            button_row.append(InlineKeyboardButton(text=text, callback_data=item.command))
+        return [button_row]
+
+    def _get_text(self, data=None):
+        if not data:
+            data = '1'
+        return self.items[int(data)].out_text
 
     def _process(self, data):
-        if data == 'b':
-            db_block_user
-        elif data == 'n':
-            db_toggle_notifications
-            self.title = str(db_user)
-            if notify:
-                return ProcessResult(strings.ca_notify_on, False, UPDATE_TEXT)
-            else:
-                return ProcessResult(strings.ca_notify_off, False, UPDATE_TEXT)
-        else:
-            return super()._process(data)
+        if data:
+            return ProcessResult(self.items[int(data)].cb_text, False, UPDATE_TEXT)
 
-class Counter(Control):
-    def __init__(self):
-        super().__init__('c', "")
+
+class Like(Control):  # TODO: behave like @like bot
+    pass
