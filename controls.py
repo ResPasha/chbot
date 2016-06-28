@@ -34,6 +34,10 @@ class Control:
             msg_identifier = str(query.inline_message_id)
         data = query.data.split('#')[1]
 
+        if not data:
+            self.bot.answerCallbackQuery(query.id, '', '')
+            return
+
         answer_text, show_alert = None, None
         try:
             result = self._process(data)
@@ -72,10 +76,20 @@ class Control:
     def get_inline_kb(self, *args):
         kb = self._get_inline_kb(*args)
         if kb:
+            new_kb = []
             for row in kb:
-                for button in row:
-                    button.callback_data = self.name + '#' + button.callback_data  # FIXME tuple is immutable
-            return InlineKeyboardMarkup(inline_keyboard=kb)
+                new_row = []
+                for b in row:
+                    assert isinstance(b, InlineKeyboardButton)
+                    new_b = InlineKeyboardButton(
+                        text=b.text,
+                        url=b.url,
+                        callback_data=self.name + '#' + b.callback_data,
+                        switch_inline_query=b.switch_inline_query
+                    )
+                    new_row.append(new_b)
+                new_kb.append(new_row)
+            return InlineKeyboardMarkup(inline_keyboard=new_kb)
         return None
 
     def _get_inline_kb(self, *args):
@@ -92,13 +106,11 @@ class Control:
 
 
 class Pager(Control):
-    def _get_caption(self, *args):
-        pass
-
     def __init__(self, name, source_list):
         super().__init__("p", name)
         self.list = source_list
         self.items_per_page = 3
+        self.buttons_count = 5
         self.title = ""
         self.default_page_no = 1
 
@@ -112,27 +124,58 @@ class Pager(Control):
         return text
 
     def _get_inline_kb(self, data=None):
+        marks = ['« ', '< ', '·', ' >', ' »', ' - ']
         page_no = int(data) if data else self.default_page_no
-        button_row = []
-        if len(self.list) < self.items_per_page:
-            max_page_no = 1
-        else:
-            max_page_no = len(self.list) // self.items_per_page
-        left = page_no - 2 if page_no > 2 else 1
-        right = left + 5 if left + 5 <= max_page_no else max_page_no
-        if left == right == 1:
-            return None
-        for i in range(left, right):
-            if i == page_no:
-                text = '*' + str(i) + '*'
+        buttons = {}
+
+        pages_count = len(self.list) // self.items_per_page
+        if len(self.list) % self.items_per_page > 0:
+            pages_count += 1
+
+        left = page_no - (self.buttons_count // 2)
+        right = page_no + (self.buttons_count // 2)
+        if pages_count >= self.buttons_count:
+            if left < 1:
+                left = 1
+            if left == 1:
+                right = self.buttons_count
+            if right > pages_count:
+                right = pages_count
+            if right == pages_count:
+                left = pages_count - self.buttons_count + 1
+
+        for i in range(left, right + 1):
+            if 0 < i <= pages_count:
+                if i < page_no:
+                    buttons[i] = marks[1] + str(i)
+                if i == page_no:
+                    buttons[i] = marks[2] + str(i) + marks[2]
+                if i > page_no:
+                    buttons[i] = str(i) + marks[3]
             else:
-                text = '.' + str(i) + '.'
-            button_row.append(InlineKeyboardButton(text=text, callback_data=str(i)))
+                buttons[i] = marks[5]
+
+        if buttons[left].startswith(marks[1]):
+            del buttons[left]
+            buttons[1] = marks[0] + '1'
+        if buttons[right].endswith(marks[3]):
+            del buttons[right]
+            buttons[pages_count] = str(pages_count) + marks[4]
+
+        button_row = [
+            InlineKeyboardButton(
+                text=buttons[key],
+                callback_data=str(key) if buttons[key] != marks[5] else ''
+            ) for key in sorted(buttons.keys())
+            ]
         return [button_row]
 
     def _process(self, data):
         if data:
             return ProcessResult(strings.ca_done, False, UPDATE_TEXT)
+
+    def _get_caption(self, *args):
+        pass
 
 
 class Menu(Control):
@@ -145,7 +188,7 @@ class Menu(Control):
 
     def __init__(self, name, menu_dict):
         super().__init__("m", name)
-        i = 1
+        i = 0
         self.items = []
         for key in menu_dict.keys():
             self.items.append(Menu.Item(str(i), key, menu_dict[key]))

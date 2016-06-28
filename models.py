@@ -1,6 +1,7 @@
 import telepot.namedtuple
 
-class ModelObj():
+
+class ModelObj:
     def __init__(self, d):
         self.__dict__.update(d)
 
