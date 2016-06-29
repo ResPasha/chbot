@@ -190,8 +190,8 @@ class Menu(Control):
         super().__init__("m", name)
         i = 0
         self.items = []
-        for key in menu_dict.keys():
-            self.items.append(Menu.Item(str(i), key, menu_dict[key]))
+        for item in menu_dict:
+            self.items.append(Menu.Item(str(i), item[0], item[1]))
             i += 1
         self.title = ''
 
@@ -199,6 +199,8 @@ class Menu(Control):
         pass
 
     def _get_inline_kb(self, data=None):
+        if not data:
+            data = '0'
         button_row = []
         for item in self.items:
             text = item.cb_text
@@ -209,7 +211,7 @@ class Menu(Control):
 
     def _get_text(self, data=None):
         if not data:
-            data = '1'
+            data = '0'
         return self.items[int(data)].out_text
 
     def _process(self, data):

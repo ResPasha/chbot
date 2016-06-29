@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import traceback
+# import traceback
 
 from db_helper import DBHelper
 from controls import *
@@ -44,11 +44,11 @@ class CHBot:
         # Master commands
         if text == strings.cmd_start:
             # TODO: check for existence
-            m = Menu('main', {
-                'Intro': 'Hello there!',
-                'Help': 'Little help',
-                'Info': 'Source code, author and contact info'
-            })
+            m = Menu('main', [
+                ('Intro', 'Hello there!'),
+                ('Help', 'Little help'),
+                ('Info', 'Source code, author and contact info')
+            ])
             self.controls[m.name] = m
             m.send(msg['from']['id'])
             return
