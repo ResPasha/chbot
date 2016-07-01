@@ -14,14 +14,47 @@ class CHBot:
         self.db = DBHelper()
         self.bot = Bot()
         self.controls = {}
-        self.bot.message_loop(self.handle)
+        self.bot.message_loop(
+            {
+                'chat': self.handle,
+                'callback_query': self.on_callback
+            }
+        )
 
-    def on_callback(self, callback_query):
-        data = callback_query['data']
+    def on_callback(self, _callback_query):
+        callback_query = CallbackQuery(**_callback_query)
+        data = callback_query.data
         control_name = data.split('#')[0]
-        control = self.controls[control_name]
-        control.process(callback_query)
-        return
+        control = self.controls.get(control_name)
+        if control:
+            self.process_control(control, callback_query)
+        else:
+            self.process_control(control_name, callback_query)
+
+    def process_control(self, control, callback_query=None):
+        if isinstance(control, Control):
+            control.process(callback_query)
+        else:
+            control_name = control
+            control = None
+            if control_name == 'mmain':
+                control = Menu('main', [
+                    ('Intro', 'Hello there!'),
+                    ('Help', 'Little help'),
+                    ('Info', 'Source code, author and contact info')
+                ])
+            elif control_name == 'pu':
+                control = Pager('u', self.db.usr.get_all())
+                control.title = strings.msg_users
+            elif control_name.startswith('user'):
+                pass  # TODO: show user info
+            else:
+                raise ValueError('No control constructor with such name')
+            self.controls[control_name] = control
+            if callback_query:
+                control.process(callback_query)
+            else:
+                control.send(callback_query.from_.id)
 
     def handle_master_reply(self, msg):
         assert 'text' in msg, 'master_reply first fuckup: no text'
@@ -38,28 +71,11 @@ class CHBot:
 
         # Master commands
         if text == strings.cmd_start:
-            # TODO: check for existence
-            m = Menu('main', [
-                ('Intro', 'Hello there!'),
-                ('Help', 'Little help'),
-                ('Info', 'Source code, author and contact info')
-            ])
-            self.controls[m.name] = m
-            m.send(msg.from_.id)
-            return
-        if text == strings.cmd_users:
-            # TODO: check for existence
-            p = Pager('u', self.db.usr.get_all())
-            p.title = strings.msg_users
-            self.controls[p.name] = p
-            p.send(msg.from_.id)
-            return
+            self.process_control('mmain')
+        elif text == strings.cmd_users:
+            self.process_control('pu')
         elif text.startswith(strings.cmd_user):
-            # TODO: check for existence
-            user_id = int(text.split('r')[1])
-            h = History('h', user_id)  # FIXME
-            self.controls[h.name] = h
-            return
+            self.process_control(text[1:])
 
         # replied
         if 'reply_to_message' in msg:

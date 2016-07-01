@@ -24,8 +24,7 @@ class Control:
         self.type = control_type
         self.name = self.type + name
 
-    def process(self, _query):
-        query = CallbackQuery(**_query)
+    def process(self, query):
         assert query.data.startswith(self.name)
         user = query.from_
         if query.message:
@@ -60,8 +59,10 @@ class Control:
                     msg_identifier,
                     reply_markup=self.get_inline_kb(data)
                 )
-        except TelegramError:
-            traceback.print_exc()
+        except TelegramError as e:
+            if e.args[0] != 'Bad Request: message is not modified':
+                traceback.print_exc()
+                raise e
 
         if answer_text:
             self.bot.answerCallbackQuery(query.id, answer_text, show_alert)
