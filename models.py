@@ -9,7 +9,13 @@ class ModelObj:
         return str(self.__dict__)
 
     def to_dict(self):
-        pass  # TODO: implement
+        d = {}
+        for k, v in vars(self).items():
+            if isinstance(v, ModelObj):
+                d[k] = v.to_dict()
+            elif not str(k).startswith('_'):
+                d[k] = v
+        return d
 
 
 class User(ModelObj):
