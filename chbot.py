@@ -14,12 +14,7 @@ class CHBot:
         self.db = DBHelper()
         self.bot = Bot()
         self.controls = {}
-        self.bot.message_loop(
-            {
-                'chat': self.handle,
-                'callback_query': self.on_callback
-            }
-        )
+        self.bot.message_loop(self.handle)
 
     def on_callback(self, callback_query):
         data = callback_query['data']
@@ -39,7 +34,7 @@ class CHBot:
             return True
 
     def handle_text(self, msg):
-        text = msg['text']
+        text = msg.text
 
         # Master commands
         if text == strings.cmd_start:
@@ -50,14 +45,14 @@ class CHBot:
                 ('Info', 'Source code, author and contact info')
             ])
             self.controls[m.name] = m
-            m.send(msg['from']['id'])
+            m.send(msg.from_.id)
             return
         if text == strings.cmd_users:
             # TODO: check for existence
-            p = Pager('u', self.db.get(self.db.usr, User))
+            p = Pager('u', self.db.usr.get_all())
             p.title = strings.msg_users
             self.controls[p.name] = p
-            p.send(msg['from']['id'])
+            p.send(msg.from_.id)
             return
         elif text.startswith(strings.cmd_user):
             # TODO: check for existence
@@ -73,26 +68,27 @@ class CHBot:
 
         # Else
         self.bot.sendMessage(config.master, strings.errmsg_unknown_cmd,
-                             reply_to_message_id=msg['message_id'])
+                             reply_to_message_id=msg.message_id)
         self.handle_feedback(msg)
 
     def handle_feedback(self, msg):
-        sender = User(**msg['from'])
-        self.db.sync(self.db.usr, sender)
-        if 'text' in msg:
-            if msg['text'] == strings.cmd_start:
+        sender = msg.from_
+        if msg.text:
+            if msg.text == strings.cmd_start:
                 self.bot.sendMessage(sender.id, strings.msg_start)
-        if 'forward_from' in msg:
+        if msg.forward_from:
             pass  # TODO: add userblock
-        self.bot.forwardMessage(config.master, sender.id, msg['message_id'])
+        self.bot.forwardMessage(config.master, sender.id, msg.message_id)
 
-    def handle(self, msg):
-        sender = User(**msg['from'])
+    def handle(self, _msg):
+        msg = Message(**_msg)
+        sender = self.db.usr.get_by_id(msg.from_.id)
+        sender.update(msg.from_)
         try:
             if str(sender.id) != config.master:  # or sender.type = master?
                 self.handle_feedback(msg)
                 return
-            if 'text' in msg:
+            if msg.text:
                 self.handle_text(msg)
                 return
         except Exception as e:
@@ -103,8 +99,10 @@ class CHBot:
             if str(sender.id) == config.master:
                 error = msg
             else:
-                error = self.bot.forwardMessage(config.master, sender.id, msg['message_id'])
-            self.bot.sendMessage(config.master, text, reply_to_message_id=error['message_id'])
+                error_msg = self.bot.forwardMessage(config.master, sender.id, msg.message_id)
+                error = Message(**error_msg)
+            self.bot.sendMessage(config.master, text, reply_to_message_id=error.message_id)
+        self.db.usr.update(sender)
 
     def feedback_reply(self, msg):
         assert 'reply_to_message' in msg, 'feedback_reply first fuckup: no replied'

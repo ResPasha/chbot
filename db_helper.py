@@ -1,15 +1,18 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from models import ModelObj
+from models import *
 import config
+
 
 def singleton(class_):
     instances = {}
-    def getinstance(*args, **kwargs):
+
+    def get_instance(*args, **kwargs):
         if class_ not in instances:
             instances[class_] = class_(*args, **kwargs)
         return instances[class_]
-    return getinstance
+    return get_instance
+
 
 @singleton
 class DBHelper:
@@ -20,36 +23,42 @@ class DBHelper:
         usr_coll_name = 'usr'
         if usr_coll_name not in self.db.collection_names():
             self.db.create_collection(usr_coll_name)
-        self.usr = self.db[usr_coll_name]
+        self.usr = UserDAO(self.db[usr_coll_name])
 
-    @staticmethod
-    def sync(coll, item):
-        def remove_id(d):
-            r = dict(d)
-            del r['_id']
-            return r
 
-        db_rec = coll.find_one({'_id': item._id})
-        if db_rec:
-            for key in db_rec.keys():  # FIXME
-                if (key not in item.__dict__) \
-                        or (not item.__dict__[key]):
-                    item.__dict__[key] = db_rec[key]
-            coll.update_one(
-                {'_id': item._id},
-                {'$set': remove_id(item.__dict__)}
-            )
-        else:
-            coll.insert_one(item.__dict__)
+class DAO:
+    def __init__(self, coll):
+        self.coll = coll
 
-    @staticmethod
-    def rm(coll, item):
-        coll.delete_one({'_id': item._id})
+    def get_all(self):
+        raise NotImplementedError()
 
-    @staticmethod
-    def get(coll, type):
-        assert issubclass(type, ModelObj)
-        items = []
-        for db_rec in coll.find({}):
-            items.append(type(**db_rec))
-        return items
+    def get_by_id(self, item_id):
+        raise NotImplementedError()
+
+    def update(self, item):
+        raise NotImplementedError()
+
+    def delete(self, item_id):
+        raise NotImplementedError()
+
+    def create(self, item):
+        raise NotImplementedError()
+
+
+class UserDAO(DAO):
+    def get_by_id(self, item_id):
+        db_rec = self.coll.find_one({'_id': item_id})
+        return User(**db_rec)
+
+    def get_all(self):
+        return [User(**db_rec) for db_rec in self.coll.find({})]
+
+    def update(self, item):
+        self.coll.update_one({'_id': item.id}, {'$set': item.__dict__})
+
+    def delete(self, item_id):
+        self.coll.delete_one({'_id': item_id})
+
+    def create(self, item):
+        self.coll.insert_one(item.__dict__)
