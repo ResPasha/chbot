@@ -33,14 +33,14 @@ class CHBot:
     def get_control(self, control_name):
         control = self.controls.get(control_name)
         if not control:
-            if control_name == 'start':
+            if control_name == strings.cmd_start:
                 control = mycontrol.StartMenu()
-            elif control_name == 'users':
+            elif control_name == strings.cmd_users:
                 control = mycontrol.UserListControl()
-            elif control_name.startswith('user'):
+            elif control_name.startswith(strings.cmd_user):
                 control = mycontrol.UserControl(control_name.split('r')[1])
             else:
-                raise ValueError('No control constructor with such name')
+                raise ValueError(strings.errmsg_no_control)
             self.controls[control_name] = control
         return control
 
@@ -60,7 +60,7 @@ class CHBot:
                 pass  # TODO: log
             else:  # TODO: check user.
                 if msg.forward_from:
-                    control = self.get_control('user' + str(user.id))
+                    control = self.get_control(strings.cmd_user + str(user.id))
                     control.send(config.master)
                 self.bot.forwardMessage(config.master, user.id, msg.message_id)
                 pass  # TODO: log
