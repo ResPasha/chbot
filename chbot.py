@@ -52,7 +52,7 @@ class CHBot:
             user = model.User(**msg.from_)
         user.update(msg.from_)
         try:
-            if msg.text:
+            if msg.text and msg.text.startswith('/'):
                 control = self.get_control(msg.text[1:])
                 control.send(user.id)
             elif msg.reply_to_message and user.type == model.UserType.receiver:
