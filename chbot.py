@@ -55,15 +55,18 @@ class CHBot:
             if msg.text:
                 control = self.get_control(msg.text[1:])
                 control.send(user.id)
-            elif msg.reply_to_message:  # TODO: check user.type
+            elif msg.reply_to_message and user.type == model.UserType.receiver:
                 self.resend(msg)
                 pass  # TODO: log
-            else:  # TODO: check user.
+            elif user.type != model.UserType.receiver:
                 if msg.forward_from:
                     control = self.get_control(strings.cmd_user + str(user.id))
                     control.send(config.master)
                 self.bot.forwardMessage(config.master, user.id, msg.message_id)
                 pass  # TODO: log
+            else:
+                self.bot.sendMessage(user.id, strings.errmsg_unknown_cmd,
+                                     reply_to_message_id=msg.message_id)
         except Exception as e:
             traceback.print_exc()
             text = strings.errmsg_err + '\n'

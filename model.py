@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 class Model:
     def __repr__(self):
         return str(self.__dict__)
@@ -14,13 +17,16 @@ class Model:
         return d
 
 
+UserType = Enum('UserType', 'sender receiver')
+
+
 class User(Model):
     def __init__(self, **kwargs):
         self.id = kwargs.get('_id') or kwargs.get('id')
         self.first_name = kwargs['first_name']
         self.last_name = kwargs.get('last_name')
         self.username = kwargs.get('username')
-        self.type = kwargs['type'] if kwargs.get('type') else 'sender'
+        self.type = kwargs['type'] if kwargs.get('type') else UserType.sender
         self.log = kwargs['log'] if kwargs.get('log') else None  # TODO: and usertype
         self.l_subs = kwargs['l_subs'] if kwargs.get('l_subs') else None  # TODO: and usertype
 
