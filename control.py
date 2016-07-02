@@ -1,14 +1,13 @@
 from collections import namedtuple
 import traceback
 
-from telepot.namedtuple import *
+from telepot.namedtuple import InlineKeyboardButton, InlineKeyboardMarkup
 from telepot.exception import TelegramError
 
 from bot import Bot
 import strings
 
-ProcessResult = namedtuple('ProcessResult',
-                           [
+ProcessResult = namedtuple('ProcessResult', [
                                'answer_text',
                                'show_alert',
                                'to_update'
@@ -19,10 +18,9 @@ UPDATE_REPLY_MARKUP = 2
 
 
 class Control:
-    def __init__(self, control_type, name):
+    def __init__(self, name):
         self.bot = Bot(None)
-        self.type = control_type
-        self.name = self.type + name
+        self.name = name
 
     def process(self, query):
         assert query.data.startswith(self.name)
@@ -108,7 +106,7 @@ class Control:
 
 class Pager(Control):
     def __init__(self, name, source_list):
-        super().__init__("p", name)
+        super().__init__(name)
         self.list = source_list
         self.items_per_page = 3
         self.buttons_count = 5
@@ -121,8 +119,13 @@ class Pager(Control):
         left = (page_no - 1) * self.items_per_page
         right = left + self.items_per_page
         for item in self.list[left:right]:
-            text += str(item) + '\n'
+            # TODO: check if builtin
+            text += self._get_item_text(item) + '\n'
         return text
+
+    @staticmethod
+    def _get_item_text(item):
+        raise NotImplementedError
 
     def _get_inline_kb(self, data=None):
         marks = ['« ', '< ', '·', ' >', ' »', ' - ']
@@ -188,7 +191,7 @@ class Menu(Control):
                       ])
 
     def __init__(self, name, menu_dict):
-        super().__init__("m", name)
+        super().__init__(name)
         i = 0
         self.items = []
         for item in menu_dict:

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-# import traceback
+import traceback
+
+from telepot.namedtuple import CallbackQuery, Message
 
 from db_helper import DBHelper
-from control import *
-from model import User
 from bot import Bot
+import mycontrol
+import model
 import config
 import strings
 
@@ -31,17 +33,12 @@ class CHBot:
     def get_control(self, control_name):
         control = self.controls.get(control_name)
         if not control:
-            if control_name == 'mmain':
-                control = Menu('main', [
-                    ('Intro', 'Hello there!'),
-                    ('Help', 'Little help'),
-                    ('Info', 'Source code, author and contact info')
-                ])
-            elif control_name == 'pu':
-                control = Pager('u', self.db.usr.get_all())
-                control.title = strings.msg_users
+            if control_name == 'start':
+                control = mycontrol.StartMenu()
+            elif control_name == 'users':
+                control = mycontrol.UserListControl()
             elif control_name.startswith('user'):
-                control = UserInfoControl(control_name.split('r')[1])
+                control = mycontrol.UserControl(control_name.split('r')[1])
             else:
                 raise ValueError('No control constructor with such name')
             self.controls[control_name] = control
@@ -52,7 +49,7 @@ class CHBot:
         # TODO: log msg in db
         user = self.db.usr.get_by_id(msg.from_.id)
         if not user:
-            user = User(**msg.from_)
+            user = model.User(**msg.from_)
         user.update(msg.from_)
         try:
             if msg.text:

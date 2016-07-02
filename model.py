@@ -1,7 +1,4 @@
 class Model:
-    def __str__(self):
-        raise NotImplementedError
-
     def __repr__(self):
         return str(self.__dict__)
 
@@ -26,11 +23,6 @@ class User(Model):
         self.type = kwargs['type'] if kwargs.get('type') else 'sender'
         self.log = kwargs['log'] if kwargs.get('log') else None  # TODO: and usertype
         self.l_subs = kwargs['l_subs'] if kwargs.get('l_subs') else None  # TODO: and usertype
-
-    def __str__(self):
-        s = self.first_name + ' @' + self.username
-        s += '\n/user' + str(self.id)
-        return s
 
     def update(self, data):
         assert self.id == data.id
