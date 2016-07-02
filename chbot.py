@@ -55,7 +55,8 @@ class CHBot:
             if msg.text and msg.text.startswith('/'):
                 control = self.get_control(msg.text[1:])
                 control.send(user.id)
-            elif msg.reply_to_message and user.type == model.UserType.receiver:
+            elif msg.reply_to_message and str(user.id) == config.master:
+                # user.type == model.UserType.receiver:
                 self.resend(msg)
                 pass  # TODO: log
             elif user.type != model.UserType.receiver:
@@ -81,4 +82,13 @@ class CHBot:
         self.db.usr.update(user)
 
     def resend(self, msg):
-        pass  # TODO: implement
+        assert msg.text  # TODO should be any type, bot text only
+        replied = msg.reply_to_message
+        if replied.forward_from:
+            recipient_id = replied.forward_from.id
+        else:
+            recipient_id = replied.text.split('\n')[0].split('r')[1]
+        text = msg.text
+        self.bot.sendMessage(recipient_id, text)
+        self.bot.sendMessage(config.master, strings.msg_reply_sent,
+                             reply_to_message_id=msg.message_id)
