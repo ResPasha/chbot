@@ -1,4 +1,4 @@
-class ModelObj:
+class Model:
     def __str__(self):
         raise NotImplementedError
 
@@ -8,7 +8,7 @@ class ModelObj:
     def to_dict(self):
         d = {}
         for k, v in vars(self).items():
-            if isinstance(v, ModelObj):
+            if isinstance(v, Model):
                 d[k] = v.to_dict()
             elif not str(k).startswith('_'):
                 if str(k) == 'id':
@@ -17,7 +17,7 @@ class ModelObj:
         return d
 
 
-class User(ModelObj):
+class User(Model):
     def __init__(self, **kwargs):
         self.id = kwargs.get('_id') or kwargs.get('id')
         self.first_name = kwargs['first_name']

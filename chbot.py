@@ -2,8 +2,8 @@
 # import traceback
 
 from db_helper import DBHelper
-from controls import *
-from models import User
+from control import *
+from model import User
 from bot import Bot
 import config
 import strings
