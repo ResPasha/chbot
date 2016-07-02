@@ -31,7 +31,8 @@ class CHBot:
         else:
             self.process_control(control_name, callback_query)
 
-    def process_control(self, control, callback_query=None):
+    def process_control(self, control, callback_query=None, cmd_from_id=None):
+        assert callback_query or cmd_from_id
         if isinstance(control, Control):
             control.process(callback_query)
         else:
@@ -54,7 +55,7 @@ class CHBot:
             if callback_query:
                 control.process(callback_query)
             else:
-                control.send(callback_query.from_.id)
+                control.send(cmd_from_id)
 
     def handle_master_reply(self, msg):
         assert 'text' in msg, 'master_reply first fuckup: no text'
@@ -71,11 +72,11 @@ class CHBot:
 
         # Master commands
         if text == strings.cmd_start:
-            self.process_control('mmain')
+            self.process_control('mmain', cmd_from_id=msg.from_.id)
         elif text == strings.cmd_users:
-            self.process_control('pu')
+            self.process_control('pu', cmd_from_id=msg.from_.id)
         elif text.startswith(strings.cmd_user):
-            self.process_control(text[1:])
+            self.process_control(text[1:], cmd_from_id=msg.from_.id)
 
         # replied
         if 'reply_to_message' in msg:

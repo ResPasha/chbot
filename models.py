@@ -14,6 +14,8 @@ class ModelObj:
             if isinstance(v, ModelObj):
                 d[k] = v.to_dict()
             elif not str(k).startswith('_'):
+                if str(k) == 'id':
+                    k = '_id'
                 d[k] = v
         return d
 
