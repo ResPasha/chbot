@@ -1,6 +1,3 @@
-import telepot.namedtuple
-
-
 class ModelObj:
     def __str__(self):
         raise NotImplementedError
@@ -22,7 +19,7 @@ class ModelObj:
 
 class User(ModelObj):
     def __init__(self, **kwargs):
-        self.id = kwargs['_id']
+        self.id = kwargs.get('_id') or kwargs.get('id')
         self.first_name = kwargs['first_name']
         self.last_name = kwargs.get('last_name')
         self.username = kwargs.get('username')
