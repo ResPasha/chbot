@@ -49,7 +49,7 @@ class DAO:
 class UserDAO(DAO):
     def get_by_id(self, item_id):
         db_rec = self.coll.find_one({'_id': int(item_id)})
-        return User(**db_rec)
+        return User(**db_rec) if db_rec else None
 
     def get_all(self):
         return [User(**db_rec) for db_rec in self.coll.find({})]
