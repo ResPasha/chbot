@@ -55,7 +55,7 @@ class UserDAO(DAO):
         return [User(**db_rec) for db_rec in self.coll.find({})]
 
     def update(self, item):
-        self.coll.update_one({'_id': item.id}, {'$set': item.to_dict()})
+        self.coll.update_one({'_id': item.id}, {'$set': item.to_dict()}, upsert=True)
 
     def delete(self, item_id):
         self.coll.delete_one({'_id': item_id})
