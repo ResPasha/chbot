@@ -27,10 +27,13 @@ class CHBot:
         callback_query = CallbackQuery(**_callback_query)
         data = callback_query.data
         control_name = data.split('#')[0]
-        control = self.get_control(control_name)
+        control = self.get_control(control_name, callback_query.from_)
         control.process(callback_query)
 
-    def get_control(self, control_name):
+    def get_control(self, control_name, invoker):
+        if str(invoker.id) != config.master and \
+                        control_name not in ['start', 'error']:
+            return self.get_control(strings.cmd_error, invoker)
         control = self.controls.get(control_name)
         if not control:
             if control_name == strings.cmd_start:
@@ -40,7 +43,7 @@ class CHBot:
             elif control_name.startswith(strings.cmd_user):
                 control = mycontrol.UserControl(control_name.split('r')[1])
             else:
-                control = self.get_control(strings.cmd_error)
+                control = self.get_control(strings.cmd_error, invoker)
             self.controls[control_name] = control
         return control
 
@@ -53,15 +56,15 @@ class CHBot:
         user.update(msg.from_)
         try:
             if msg.text and msg.text.startswith('/'):
-                control = self.get_control(msg.text[1:])
+                control = self.get_control(msg.text[1:], user)
                 control.send(user.id)
             elif msg.reply_to_message and str(user.id) == config.master:
-                # user.type == model.UserType.receiver:
                 self.resend(msg)
                 pass  # TODO: log
-            elif user.type != model.UserType.receiver:
+            elif str(user.id) != config.master:
                 if msg.forward_from:
-                    control = self.get_control(strings.cmd_user + str(user.id))
+                    control = self.get_control(strings.cmd_user + str(user.id),
+                                               self.db.usr.get_by_id(config.master))
                     control.send(config.master)
                 self.bot.forwardMessage(config.master, user.id, msg.message_id)
                 pass  # TODO: log
