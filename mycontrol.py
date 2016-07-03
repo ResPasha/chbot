@@ -49,3 +49,20 @@ class UserListControl(control.Pager):
         s = item.first_name + ' @' + item.username
         s += '\n/' + strings.cmd_user + str(item.id) + '\n'
         return s
+
+
+class ErrControl(control.Control):
+    def __init__(self):
+        super().__init__(strings.cmd_error)
+
+    def _get_inline_kb(self, *args):
+        pass
+
+    def _process(self, data):
+        pass
+
+    def _get_caption(self, *args):
+        pass
+
+    def _get_text(self, *args):
+        return strings.errmsg_unknown_cmd

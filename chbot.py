@@ -40,7 +40,7 @@ class CHBot:
             elif control_name.startswith(strings.cmd_user):
                 control = mycontrol.UserControl(control_name.split('r')[1])
             else:
-                raise ValueError(strings.errmsg_no_control)
+                control = self.get_control(strings.cmd_error)
             self.controls[control_name] = control
         return control
 
