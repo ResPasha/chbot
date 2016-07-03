@@ -6,7 +6,7 @@ You need a `config.py` with those variables defined:
 ```python
 master = '<your_userid>'
 TOKEN = '<telegram_bot_token>'
-db_auth = 'mongodb://<mongo_db_URI>'
+db_auth = 'mongodb://<user>:<password>@<my.mongodb.com>:<port>/<database>'  # your MongoDB connection url
 db_name = '<database_name>'
 ```
 You can get <user_id> from @userinfobot
