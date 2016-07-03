@@ -52,7 +52,7 @@ class CHBot:
         # TODO: log msg in db
         user = self.db.usr.get_by_id(msg.from_.id)
         if not user:
-            user = model.User(id=msg.from_id, first_name=msg.from_.first_name)
+            user = model.User(id=msg.from_.id, first_name=msg.from_.first_name)
         user.update(msg.from_)
         try:
             if msg.text and msg.text.startswith('/'):
