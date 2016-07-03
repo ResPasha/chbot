@@ -25,8 +25,8 @@ class UserControl(control.Control):
     def _get_text(self, *args):
         s = strings.cmd_user + str(self.user.id) + '\n\n'
         s += strings.msg_first_name + self.user.first_name + '\n'
-        s += strings.msg_last_name + self.user.last_name + '\n'
-        s += strings.msg_username + self.user.username
+        s += strings.msg_last_name + str(self.user.last_name) + '\n'
+        s += strings.msg_username + str(self.user.username)
         return s
 
 
@@ -46,7 +46,9 @@ class UserListControl(control.Pager):
 
     @staticmethod
     def _get_item_text(item):
-        s = item.first_name + ' @' + item.username
+        s = item.first_name
+        if item.username:
+            s += ' @' + item.username
         s += '\n/' + strings.cmd_user + str(item.id) + '\n'
         return s
 
